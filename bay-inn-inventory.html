@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bay Inn Motel – Snack & Drink Inventory</title>
+<style>
+  :root {
+    --navy: #1a2e4a;
+    --blue: #1e5799;
+    --teal: #0a9396;
+    --gold: #e9c46a;
+    --red: #e63946;
+    --green: #2d9e5f;
+    --light: #f4f8fb;
+    --white: #ffffff;
+    --gray: #6c757d;
+    --border: #d0dde8;
+    --shadow: 0 4px 20px rgba(0,0,0,0.10);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: var(--light); color: #1a2e4a; min-height: 100vh; }
+
+  /* ── LOGIN ── */
+  #login-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 60%, var(--teal) 100%);
+  }
+  .login-card {
+    background: var(--white); border-radius: 20px; padding: 44px 40px;
+    width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.25); text-align: center;
+  }
+  .login-logo { font-size: 2.2rem; font-weight: 800; color: var(--navy); margin-bottom: 4px; }
+  .login-sub { color: var(--teal); font-size: .95rem; margin-bottom: 28px; letter-spacing:.5px; }
+  .login-card label { display: block; text-align:left; font-size:.82rem; font-weight:600; color:var(--navy); margin-bottom:5px; }
+  .login-card select, .login-card input {
+    width: 100%; padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 9px;
+    font-size: .95rem; margin-bottom: 16px; outline: none; transition: border .2s;
+  }
+  .login-card select:focus, .login-card input:focus { border-color: var(--teal); }
+  .btn-login {
+    width: 100%; padding: 12px; background: linear-gradient(90deg,var(--blue),var(--teal));
+    color:#fff; border:none; border-radius:9px; font-size:1rem; font-weight:700; cursor:pointer;
+    transition: opacity .2s;
+  }
+  .btn-login:hover { opacity: .9; }
+  .login-err { color: var(--red); font-size:.84rem; margin-top:6px; }
+
+  /* ── LAYOUT ── */
+  #app { display: none; }
+  .topbar {
+    background: linear-gradient(90deg, var(--navy), var(--blue));
+    color: #fff; padding: 0 28px; height: 62px; display: flex; align-items: center;
+    justify-content: space-between; box-shadow: 0 2px 10px rgba(0,0,0,.18);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .topbar-brand { font-size: 1.25rem; font-weight: 800; letter-spacing: .3px; }
+  .topbar-brand span { color: var(--gold); }
+  .topbar-right { display: flex; align-items: center; gap: 16px; font-size: .9rem; }
+  .role-badge {
+    background: rgba(255,255,255,.15); border-radius: 20px; padding: 4px 14px;
+    font-size: .78rem; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+  }
+  .role-badge.admin { background: var(--gold); color: var(--navy); }
+  .role-badge.staff { background: var(--teal); color: #fff; }
+  .role-badge.viewer { background: #555; color: #fff; }
+  .btn-logout {
+    background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
+    color: #fff; padding: 6px 16px; border-radius: 8px; cursor: pointer; font-size:.85rem;
+    transition: background .2s;
+  }
+  .btn-logout:hover { background: rgba(255,255,255,.28); }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 28px 20px; }
+
+  /* ── TABS ── */
+  .tabs { display: flex; gap: 6px; margin-bottom: 24px; flex-wrap: wrap; }
+  .tab {
+    padding: 9px 22px; border-radius: 10px; border: 1.5px solid var(--border);
+    background: #fff; cursor: pointer; font-weight: 600; font-size: .9rem;
+    color: var(--gray); transition: all .2s;
+  }
+  .tab.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .tab:hover:not(.active) { border-color: var(--teal); color: var(--teal); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── CARDS / STATS ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    background: #fff; border-radius: 14px; padding: 20px 22px;
+    box-shadow: var(--shadow); border-left: 4px solid var(--teal);
+  }
+  .stat-card.warn { border-left-color: var(--gold); }
+  .stat-card.danger { border-left-color: var(--red); }
+  .stat-card.sales { border-left-color: var(--green); }
+  .stat-label { font-size: .78rem; color: var(--gray); font-weight: 600; text-transform: uppercase; letter-spacing:.5px; }
+  .stat-value { font-size: 2rem; font-weight: 800; color: var(--navy); margin-top: 4px; }
+  .stat-sub { font-size: .78rem; color: var(--gray); margin-top: 2px; }
+
+  /* ── TABLE ── */
+  .card { background: #fff; border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; margin-bottom: 24px; }
+  .card-header {
+    padding: 18px 22px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+  }
+  .card-title { font-size: 1.05rem; font-weight: 700; color: var(--navy); }
+  .search-box {
+    padding: 8px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size:.9rem;
+    outline:none; transition: border .2s; width: 220px;
+  }
+  .search-box:focus { border-color: var(--teal); }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: var(--light); color: var(--navy); font-size: .8rem; font-weight: 700;
+       text-transform: uppercase; letter-spacing:.5px; padding: 12px 16px; text-align:left; }
+  td { padding: 13px 16px; font-size: .92rem; border-bottom: 1px solid #f0f4f8; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f7fbff; }
+  .badge {
+    display: inline-block; padding: 3px 11px; border-radius: 20px;
+    font-size: .75rem; font-weight: 700;
+  }
+  .badge-snack { background: #fff3cd; color: #856404; }
+  .badge-drink { background: #cfe2ff; color: #084298; }
+  .badge-ok { background: #d1fae5; color: #065f46; }
+  .badge-low { background: #fef3c7; color: #92400e; }
+  .badge-out { background: #fee2e2; color: #991b1b; }
+
+  /* ── BUTTONS ── */
+  .btn { padding: 8px 18px; border-radius: 8px; border: none; font-size:.86rem; font-weight:700; cursor:pointer; transition: all .2s; }
+  .btn-primary { background: var(--blue); color: #fff; }
+  .btn-primary:hover { background: var(--teal); }
+  .btn-success { background: var(--green); color: #fff; }
+  .btn-success:hover { opacity:.85; }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-danger:hover { opacity:.85; }
+  .btn-gold { background: var(--gold); color: var(--navy); }
+  .btn-sm { padding: 5px 12px; font-size: .78rem; }
+  .btn:disabled { opacity:.4; cursor:not-allowed; }
+
+  /* ── FORM / MODAL ── */
+  .modal-overlay {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.45);
+    z-index:200; align-items:center; justify-content:center;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal {
+    background:#fff; border-radius:18px; padding:32px; width:460px; max-width:95vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25); max-height:90vh; overflow-y:auto;
+  }
+  .modal h3 { font-size:1.15rem; font-weight:800; color:var(--navy); margin-bottom:20px; }
+  .form-row { margin-bottom: 14px; }
+  .form-row label { display:block; font-size:.82rem; font-weight:600; color:var(--navy); margin-bottom:5px; }
+  .form-row input, .form-row select {
+    width:100%; padding:9px 13px; border:1.5px solid var(--border); border-radius:8px;
+    font-size:.93rem; outline:none; transition: border .2s;
+  }
+  .form-row input:focus, .form-row select:focus { border-color:var(--teal); }
+  .form-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+
+  /* ── SELL PANEL ── */
+  .sell-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media(max-width:700px){ .sell-grid{grid-template-columns:1fr;} }
+  .item-grid {
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px; padding:16px;
+  }
+  .item-tile {
+    border:2px solid var(--border); border-radius:12px; padding:14px 10px; text-align:center;
+    cursor:pointer; transition:all .2s; background:#fff;
+  }
+  .item-tile:hover:not(.out) { border-color:var(--teal); background:#f0fafa; transform:translateY(-2px); }
+  .item-tile.out { opacity:.4; cursor:not-allowed; }
+  .item-tile.selected { border-color:var(--blue); background:#e8f4ff; }
+  .item-emoji { font-size:2rem; margin-bottom:6px; }
+  .item-name { font-size:.82rem; font-weight:700; color:var(--navy); }
+  .item-price { font-size:.9rem; color:var(--teal); font-weight:700; margin-top:2px; }
+  .item-stock { font-size:.72rem; color:var(--gray); }
+  .cart-panel { background:#fff; border-radius:14px; box-shadow:var(--shadow); padding:20px; }
+  .cart-title { font-weight:800; font-size:1rem; color:var(--navy); margin-bottom:14px; }
+  .cart-item { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f4f8; font-size:.88rem; }
+  .cart-total { font-weight:800; font-size:1.1rem; color:var(--navy); margin-top:12px; text-align:right; }
+  .qty-ctrl { display:flex; align-items:center; gap:6px; }
+  .qty-btn { width:26px;height:26px;border-radius:6px;border:1.5px solid var(--border);background:#f4f8fb;cursor:pointer;font-weight:700;font-size:.9rem; }
+
+  /* ── LOG ── */
+  .log-item { padding:10px 16px; border-bottom:1px solid #f0f4f8; font-size:.88rem; }
+  .log-time { font-size:.75rem; color:var(--gray); }
+  .log-user { font-weight:700; color:var(--blue); }
+
+  /* ── TOAST ── */
+  #toast {
+    position:fixed; bottom:28px; right:28px; background:var(--navy); color:#fff;
+    padding:13px 22px; border-radius:10px; font-size:.9rem; font-weight:600;
+    box-shadow:0 8px 28px rgba(0,0,0,.22); display:none; z-index:999; max-width:300px;
+  }
+  #toast.show { display:block; animation: slideIn .3s ease; }
+  @keyframes slideIn { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+  .empty-state { text-align:center; padding:40px; color:var(--gray); font-size:.95rem; }
+  .filter-bar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">🏨 Bay Inn</div>
+    <div class="login-sub">Inventory Management System</div>
+    <label>Select Role</label>
+    <select id="login-role">
+      <option value="">-- Choose your role --</option>
+      <option value="admin">Admin / Manager</option>
+      <option value="staff">Front Desk Staff</option>
+      <option value="viewer">View Only</option>
+    </select>
+    <label>PIN</label>
+    <input type="password" id="login-pin" placeholder="Enter PIN" maxlength="6">
+    <button class="btn-login" onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="login-err"></div>
+    <div style="margin-top:18px;font-size:.75rem;color:#aaa;">
+      Demo PINs → Admin: <b>1234</b> &nbsp;|&nbsp; Staff: <b>5678</b> &nbsp;|&nbsp; Viewer: <b>0000</b>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-brand">🏨 Bay Inn <span>Motel</span></div>
+    <div class="topbar-right">
+      <span id="top-user"></span>
+      <span class="role-badge" id="top-role"></span>
+      <button class="btn-logout" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- TABS -->
+    <div class="tabs" id="tabs">
+      <div class="tab active" data-tab="dashboard" onclick="switchTab(this,'dashboard')">📊 Dashboard</div>
+      <div class="tab" data-tab="inventory" onclick="switchTab(this,'inventory')">📦 Inventory</div>
+      <div class="tab" data-tab="sell" id="btn-tab-sell" onclick="switchTab(this,'sell')">🛒 Sell</div>
+      <div class="tab" data-tab="log" id="btn-tab-log" onclick="switchTab(this,'log')">📋 Sales Log</div>
+      <div class="tab" data-tab="users" id="btn-tab-users" onclick="switchTab(this,'users')">👥 Users</div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="tab-content active" id="tab-dashboard">
+      <div class="stats-grid" id="stats-grid"></div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">⚠️ Low Stock Alerts</span></div>
+        <div id="low-stock-list"></div>
+      </div>
+    </div>
+
+    <!-- INVENTORY -->
+    <div class="tab-content" id="tab-inventory">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📦 Snacks & Drinks Inventory</span>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <input class="search-box" id="inv-search" placeholder="🔍 Search items..." oninput="renderInventory()">
+            <select id="inv-filter" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.9rem;outline:none;" onchange="renderInventory()">
+              <option value="all">All Categories</option>
+              <option value="snack">Snacks</option>
+              <option value="drink">Drinks</option>
+            </select>
+            <button class="btn btn-primary" id="btn-add-item" onclick="openAddModal()">+ Add Item</button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th><th>Category</th><th>Price</th>
+              <th>Stock</th><th>Min Stock</th><th>Status</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="inv-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SELL -->
+    <div class="tab-content" id="tab-sell">
+      <div class="sell-grid">
+        <div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">🏪 Items</span>
+              <select id="sell-filter" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.88rem;outline:none;" onchange="renderSellItems()">
+                <option value="all">All</option><option value="snack">Snacks</option><option value="drink">Drinks</option>
+              </select>
+            </div>
+            <div class="item-grid" id="sell-grid"></div>
+          </div>
+        </div>
+        <div>
+          <div class="cart-panel">
+            <div class="cart-title">🛒 Current Transaction</div>
+            <div id="cart-items"></div>
+            <div class="cart-total" id="cart-total">Total: $0.00</div>
+            <div style="margin-top:14px;">
+              <label style="font-size:.82rem;font-weight:600;color:var(--navy);display:block;margin-bottom:6px;">Room / Customer (optional)</label>
+              <input id="room-input" style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:.9rem;outline:none;" placeholder="e.g. Room 12">
+            </div>
+            <div style="display:flex;gap:8px;margin-top:14px;">
+              <button class="btn btn-success" style="flex:1" onclick="completeSale()">✅ Complete Sale</button>
+              <button class="btn btn-danger btn-sm" onclick="clearCart()">🗑</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOG -->
+    <div class="tab-content" id="tab-log">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📋 Sales Log</span>
+          <button class="btn btn-primary" id="btn-export" onclick="exportCSV()">⬇ Export CSV</button>
+        </div>
+        <div id="sales-log-list"></div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="tab-content" id="tab-users">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">👥 User Roles & Access</span>
+        </div>
+        <div style="padding:20px;">
+          <table>
+            <thead><tr><th>Role</th><th>PIN</th><th>Dashboard</th><th>View Inventory</th><th>Edit Inventory</th><th>Sell</th><th>Sales Log</th><th>Manage Users</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="role-badge admin">Admin</span></td><td>1234</td>
+                <td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td>
+              </tr>
+              <tr>
+                <td><span class="role-badge staff">Staff</span></td><td>5678</td>
+                <td>✅</td><td>✅</td><td>❌</td><td>✅</td><td>✅</td><td>❌</td>
+              </tr>
+              <tr>
+                <td><span class="role-badge viewer">Viewer</span></td><td>0000</td>
+                <td>✅</td><td>✅</td><td>❌</td><td>❌</td><td>❌</td><td>❌</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="margin-top:24px;padding:18px;background:var(--light);border-radius:12px;font-size:.88rem;color:var(--gray);line-height:1.7;">
+            <b style="color:var(--navy)">Role Descriptions:</b><br>
+            🔑 <b>Admin/Manager</b> — Full access: add/edit/delete items, adjust stock, view all sales, export reports.<br>
+            🧑‍💼 <b>Front Desk Staff</b> — Can sell items, view inventory and sales log. Cannot modify inventory or users.<br>
+            👁️ <b>Viewer</b> — Read-only access to dashboard and inventory. Cannot sell or modify anything.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD/EDIT ITEM MODAL -->
+<div class="modal-overlay" id="item-modal">
+  <div class="modal">
+    <h3 id="modal-title">Add New Item</h3>
+    <div class="form-row"><label>Item Name</label><input id="f-name" placeholder="e.g. Doritos Nacho"></div>
+    <div class="form-row">
+      <label>Category</label>
+      <select id="f-cat">
+        <option value="snack">🍿 Snack</option>
+        <option value="drink">🥤 Drink</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Emoji Icon</label>
+      <select id="f-emoji">
+        <option>🍿</option><option>🍫</option><option>🍬</option><option>🍭</option>
+        <option>🥨</option><option>🧀</option><option>🍪</option><option>🥜</option>
+        <option>🍩</option><option>🍞</option><option>🥤</option><option>🧃</option>
+        <option>🧋</option><option>☕</option><option>🍺</option><option>🍷</option>
+        <option>💧</option><option>🥛</option><option>🍵</option><option>🍹</option>
+      </select>
+    </div>
+    <div class="form-row"><label>Price ($)</label><input id="f-price" type="number" step="0.01" min="0" placeholder="1.50"></div>
+    <div class="form-row"><label>Stock Quantity</label><input id="f-stock" type="number" min="0" placeholder="20"></div>
+    <div class="form-row"><label>Low Stock Alert Threshold</label><input id="f-min" type="number" min="0" placeholder="5"></div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveItem()">Save Item</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESTOCK MODAL -->
+<div class="modal-overlay" id="restock-modal">
+  <div class="modal">
+    <h3>📦 Restock Item</h3>
+    <div id="restock-item-name" style="font-size:.95rem;color:var(--gray);margin-bottom:16px;"></div>
+    <div class="form-row"><label>Quantity to Add</label><input id="f-restock" type="number" min="1" placeholder="e.g. 20"></div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeRestockModal()">Cancel</button>
+      <button class="btn btn-success" onclick="confirmRestock()">Add Stock</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────
+const PINS = { admin:'1234', staff:'5678', viewer:'0000' };
+let currentUser = null;
+let editingId = null;
+let restockId = null;
+
+let inventory = [
+  {id:1,name:'Doritos',cat:'snack',emoji:'🍿',price:1.50,stock:18,min:5},
+  {id:2,name:'Snickers',cat:'snack',emoji:'🍫',price:1.75,stock:12,min:5},
+  {id:3,name:'Lay\'s Classic',cat:'snack',emoji:'🥨',price:1.25,stock:3,min:5},
+  {id:4,name:'Oreos',cat:'snack',emoji:'🍪',price:2.00,stock:8,min:4},
+  {id:5,name:'Mixed Nuts',cat:'snack',emoji:'🥜',price:2.50,stock:0,min:3},
+  {id:6,name:'Gummy Bears',cat:'snack',emoji:'🍬',price:1.50,stock:15,min:5},
+  {id:7,name:'Coca-Cola',cat:'drink',emoji:'🥤',price:2.00,stock:24,min:8},
+  {id:8,name:'Water Bottle',cat:'drink',emoji:'💧',price:1.00,stock:30,min:10},
+  {id:9,name:'Orange Juice',cat:'drink',emoji:'🧃',price:2.50,stock:2,min:5},
+  {id:10,name:'Coffee',cat:'drink',emoji:'☕',price:1.75,stock:20,min:6},
+  {id:11,name:'Gatorade',cat:'drink',emoji:'🍹',price:2.25,stock:10,min:5},
+  {id:12,name:'Sprite',cat:'drink',emoji:'🥤',price:2.00,stock:0,min:5},
+];
+let salesLog = [];
+let cart = {};
+let nextId = 20;
+
+// ── AUTH ───────────────────────────────────────────────
+function doLogin(){
+  const role = document.getElementById('login-role').value;
+  const pin  = document.getElementById('login-pin').value;
+  const err  = document.getElementById('login-err');
+  if(!role){ err.textContent='Please select a role.'; return; }
+  if(PINS[role] !== pin){ err.textContent='Incorrect PIN. Please try again.'; return; }
+  currentUser = { role, name: role==='admin'?'Manager':role==='staff'?'Front Desk':'Guest' };
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('top-user').textContent = currentUser.name;
+  const rb = document.getElementById('top-role');
+  rb.textContent = role.toUpperCase(); rb.className='role-badge '+role;
+  applyPermissions();
+  renderDashboard(); renderInventory(); renderSellItems(); renderCart(); renderLog();
+}
+function logout(){
+  currentUser=null; cart={};
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-pin').value='';
+  document.getElementById('login-err').textContent='';
+}
+function applyPermissions(){
+  const r = currentUser.role;
+  // Tabs visibility
+  document.getElementById('btn-tab-sell').style.display   = r==='viewer'?'none':'';
+  document.getElementById('btn-tab-log').style.display    = r==='viewer'?'none':'';
+  document.getElementById('btn-tab-users').style.display  = r==='admin'?'':'none';
+  // Inventory actions
+  document.getElementById('btn-add-item').style.display = r==='admin'?'':'none';
+}
+
+// ── TABS ───────────────────────────────────────────────
+function switchTab(el, name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ── DASHBOARD ─────────────────────────────────────────
+function renderDashboard(){
+  const total = inventory.reduce((s,i)=>s+i.stock,0);
+  const lowItems = inventory.filter(i=>i.stock>0&&i.stock<=i.min);
+  const outItems = inventory.filter(i=>i.stock===0);
+  const todaySales = salesLog.filter(s=>{
+    const d=new Date(s.time); const n=new Date();
+    return d.toDateString()===n.toDateString();
+  }).reduce((s,l)=>s+l.total,0);
+
+  document.getElementById('stats-grid').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Total Items</div><div class="stat-value">${inventory.length}</div><div class="stat-sub">in inventory</div></div>
+    <div class="stat-card warn"><div class="stat-label">Low Stock</div><div class="stat-value">${lowItems.length}</div><div class="stat-sub">items need restocking</div></div>
+    <div class="stat-card danger"><div class="stat-label">Out of Stock</div><div class="stat-value">${outItems.length}</div><div class="stat-sub">items unavailable</div></div>
+    <div class="stat-card sales"><div class="stat-label">Today's Sales</div><div class="stat-value">$${todaySales.toFixed(2)}</div><div class="stat-sub">${salesLog.filter(s=>{const d=new Date(s.time),n=new Date();return d.toDateString()===n.toDateString();}).length} transactions</div></div>
+  `;
+
+  const alerts = inventory.filter(i=>i.stock<=i.min);
+  const ll = document.getElementById('low-stock-list');
+  if(!alerts.length){ ll.innerHTML='<div class="empty-state">✅ All items are adequately stocked!</div>'; return; }
+  ll.innerHTML = alerts.map(i=>`
+    <div class="log-item" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>${i.emoji} <b>${i.name}</b> — <span class="${i.stock===0?'badge badge-out':'badge badge-low'}">${i.stock===0?'OUT OF STOCK':i.stock+' left'}</span></span>
+      ${currentUser.role==='admin'?`<button class="btn btn-gold btn-sm" onclick="openRestock(${i.id})">+ Restock</button>`:''}
+    </div>`).join('');
+}
+
+// ── INVENTORY ─────────────────────────────────────────
+function renderInventory(){
+  const q = document.getElementById('inv-search').value.toLowerCase();
+  const f = document.getElementById('inv-filter').value;
+  const rows = inventory.filter(i=>{
+    const matchQ = i.name.toLowerCase().includes(q);
+    const matchF = f==='all'||i.cat===f;
+    return matchQ&&matchF;
+  });
+  const canEdit = currentUser.role==='admin';
+  document.getElementById('inv-table').innerHTML = rows.length ? rows.map(i=>{
+    const status = i.stock===0?'<span class="badge badge-out">Out</span>':i.stock<=i.min?'<span class="badge badge-low">Low</span>':'<span class="badge badge-ok">OK</span>';
+    const actions = canEdit ? `
+      <button class="btn btn-primary btn-sm" onclick="openEditModal(${i.id})">Edit</button>
+      <button class="btn btn-gold btn-sm" onclick="openRestock(${i.id})">+Stock</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteItem(${i.id})">Del</button>
+    ` : '—';
+    return `<tr>
+      <td>${i.emoji} ${i.name}</td>
+      <td><span class="badge badge-${i.cat}">${i.cat}</span></td>
+      <td>$${i.price.toFixed(2)}</td>
+      <td><b>${i.stock}</b></td>
+      <td>${i.min}</td>
+      <td>${status}</td>
+      <td style="white-space:nowrap">${actions}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="7" class="empty-state">No items found.</td></tr>';
+}
+
+// ── ITEM MODAL ────────────────────────────────────────
+function openAddModal(){
+  editingId=null;
+  document.getElementById('modal-title').textContent='Add New Item';
+  ['f-name','f-price','f-stock','f-min'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-cat').value='snack';
+  document.getElementById('f-emoji').value='🍿';
+  document.getElementById('item-modal').classList.add('open');
+}
+function openEditModal(id){
+  const i = inventory.find(x=>x.id===id); if(!i)return;
+  editingId=id;
+  document.getElementById('modal-title').textContent='Edit Item';
+  document.getElementById('f-name').value=i.name;
+  document.getElementById('f-cat').value=i.cat;
+  document.getElementById('f-emoji').value=i.emoji;
+  document.getElementById('f-price').value=i.price;
+  document.getElementById('f-stock').value=i.stock;
+  document.getElementById('f-min').value=i.min;
+  document.getElementById('item-modal').classList.add('open');
+}
+function closeModal(){ document.getElementById('item-modal').classList.remove('open'); }
+function saveItem(){
+  const name=document.getElementById('f-name').value.trim();
+  const cat=document.getElementById('f-cat').value;
+  const emoji=document.getElementById('f-emoji').value;
+  const price=parseFloat(document.getElementById('f-price').value);
+  const stock=parseInt(document.getElementById('f-stock').value);
+  const min=parseInt(document.getElementById('f-min').value);
+  if(!name||isNaN(price)||isNaN(stock)||isNaN(min)){ toast('Please fill all fields.'); return; }
+  if(editingId){
+    const i=inventory.find(x=>x.id===editingId);
+    Object.assign(i,{name,cat,emoji,price,stock,min});
+    toast('Item updated!');
+  } else {
+    inventory.push({id:nextId++,name,cat,emoji,price,stock,min});
+    toast('Item added!');
+  }
+  closeModal(); renderInventory(); renderDashboard(); renderSellItems();
+}
+function deleteItem(id){
+  if(!confirm('Delete this item?')) return;
+  inventory=inventory.filter(i=>i.id!==id);
+  toast('Item deleted.'); renderInventory(); renderDashboard(); renderSellItems();
+}
+
+// ── RESTOCK ───────────────────────────────────────────
+function openRestock(id){
+  restockId=id;
+  const i=inventory.find(x=>x.id===id);
+  document.getElementById('restock-item-name').textContent=`${i.emoji} ${i.name} — current stock: ${i.stock}`;
+  document.getElementById('f-restock').value='';
+  document.getElementById('restock-modal').classList.add('open');
+}
+function closeRestockModal(){ document.getElementById('restock-modal').classList.remove('open'); }
+function confirmRestock(){
+  const qty=parseInt(document.getElementById('f-restock').value);
+  if(isNaN(qty)||qty<1){ toast('Enter a valid quantity.'); return; }
+  const i=inventory.find(x=>x.id===restockId);
+  i.stock+=qty;
+  closeRestockModal(); toast(`+${qty} added to ${i.name}!`);
+  renderInventory(); renderDashboard(); renderSellItems();
+}
+
+// ── SELL ──────────────────────────────────────────────
+function renderSellItems(){
+  const f = document.getElementById('sell-filter').value;
+  const items = inventory.filter(i=>f==='all'||i.cat===f);
+  document.getElementById('sell-grid').innerHTML = items.map(i=>`
+    <div class="item-tile ${i.stock===0?'out':''} ${cart[i.id]?'selected':''}" onclick="${i.stock>0?`addToCart(${i.id})`:''}" title="${i.stock===0?'Out of stock':''}">
+      <div class="item-emoji">${i.emoji}</div>
+      <div class="item-name">${i.name}</div>
+      <div class="item-price">$${i.price.toFixed(2)}</div>
+      <div class="item-stock">${i.stock===0?'Out of stock':i.stock+' in stock'}</div>
+    </div>`).join('');
+}
+function addToCart(id){
+  const i=inventory.find(x=>x.id===id);
+  if(!i||i.stock===0) return;
+  cart[id]=(cart[id]||0)+1;
+  if(cart[id]>i.stock){ cart[id]=i.stock; toast('Max stock reached!'); }
+  renderCart(); renderSellItems();
+}
+function changeQty(id,delta){
+  const i=inventory.find(x=>x.id===id);
+  cart[id]=(cart[id]||0)+delta;
+  if(cart[id]<=0) delete cart[id];
+  else if(cart[id]>i.stock) cart[id]=i.stock;
+  renderCart(); renderSellItems();
+}
+function clearCart(){ cart={}; renderCart(); renderSellItems(); }
+function renderCart(){
+  const keys=Object.keys(cart);
+  if(!keys.length){
+    document.getElementById('cart-items').innerHTML='<div style="color:var(--gray);font-size:.88rem;padding:10px 0;">No items added yet.</div>';
+    document.getElementById('cart-total').textContent='Total: $0.00';
+    return;
+  }
+  let total=0;
+  document.getElementById('cart-items').innerHTML=keys.map(id=>{
+    const i=inventory.find(x=>x.id==id);
+    const sub=i.price*cart[id]; total+=sub;
+    return `<div class="cart-item">
+      <span>${i.emoji} ${i.name}</span>
+      <div class="qty-ctrl">
+        <button class="qty-btn" onclick="changeQty(${id},-1)">−</button>
+        <span>${cart[id]}</span>
+        <button class="qty-btn" onclick="changeQty(${id},1)">+</button>
+        <span style="min-width:50px;text-align:right;font-weight:700">$${sub.toFixed(2)}</span>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('cart-total').textContent=`Total: $${total.toFixed(2)}`;
+}
+function completeSale(){
+  if(!Object.keys(cart).length){ toast('Cart is empty!'); return; }
+  let total=0, items=[];
+  for(const [id,qty] of Object.entries(cart)){
+    const i=inventory.find(x=>x.id==id);
+    i.stock-=qty; total+=i.price*qty;
+    items.push({name:i.name,emoji:i.emoji,qty,price:i.price});
+  }
+  const room=document.getElementById('room-input').value.trim();
+  salesLog.unshift({
+    id:Date.now(), time:new Date().toISOString(),
+    user:currentUser.name, role:currentUser.role,
+    room:room||'—', items, total
+  });
+  cart={};
+  document.getElementById('room-input').value='';
+  toast(`✅ Sale complete! $${total.toFixed(2)}`);
+  renderCart(); renderSellItems(); renderDashboard(); renderLog();
+}
+
+// ── LOG ───────────────────────────────────────────────
+function renderLog(){
+  const el=document.getElementById('sales-log-list');
+  if(!salesLog.length){ el.innerHTML='<div class="empty-state">No sales recorded yet.</div>'; return; }
+  el.innerHTML=salesLog.map(s=>`
+    <div class="log-item">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <span class="log-user">${s.user}</span>
+          <span style="font-size:.78rem;color:var(--gray);margin-left:6px;">(${s.role})</span>
+          ${s.room!=='—'?`<span style="font-size:.78rem;background:#e0f0ff;color:#084298;border-radius:8px;padding:2px 8px;margin-left:6px;">Room ${s.room}</span>`:''}
+        </div>
+        <b style="color:var(--green)">$${s.total.toFixed(2)}</b>
+      </div>
+      <div style="margin-top:4px;font-size:.82rem;color:var(--gray)">
+        ${s.items.map(i=>`${i.emoji} ${i.name} x${i.qty}`).join(' &nbsp;·&nbsp; ')}
+      </div>
+      <div class="log-time">${new Date(s.time).toLocaleString()}</div>
+    </div>`).join('');
+}
+
+// ── EXPORT ───────────────────────────────────────────
+function exportCSV(){
+  const rows=[['Date','User','Role','Room','Items','Total']];
+  salesLog.forEach(s=>{
+    rows.push([
+      new Date(s.time).toLocaleString(), s.user, s.role, s.room,
+      s.items.map(i=>`${i.name}x${i.qty}`).join('; '),
+      '$'+s.total.toFixed(2)
+    ]);
+  });
+  const csv=rows.map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='bayinn-sales.csv'; a.click();
+  toast('CSV exported!');
+}
+
+// ── TOAST ─────────────────────────────────────────────
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// close modals on overlay click
+document.getElementById('item-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal();});
+document.getElementById('restock-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeRestockModal();});
+</script>
+</body>
+</html>
